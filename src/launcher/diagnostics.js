@@ -1,22 +1,38 @@
 const fs = require("fs");
 const path = require("path");
-const { execFileSync } = require("child_process");
+const { spawnSync } = require("child_process");
 const { isPortOpen } = require("./process-utils");
 
 function commandVersion(file, args = [], env = {}) {
   try {
-    const output = execFileSync(file, args, {
+    const common = {
       encoding: "utf8",
       windowsHide: true,
       timeout: 7000,
       env: { ...process.env, ...env },
       stdio: ["ignore", "pipe", "pipe"]
-    });
-    return String(output).trim();
-  } catch (error) {
-    const stderr = error?.stderr ? String(error.stderr).trim() : "";
-    const stdout = error?.stdout ? String(error.stdout).trim() : "";
-    return stderr || stdout || null;
+    };
+
+    let result;
+    if (process.platform === "win32" && /\.(cmd|bat)$/i.test(String(file))) {
+      const escaped = [file, ...args]
+        .map((part) => `"${String(part).replaceAll('"', '\\"')}"`)
+        .join(" ");
+      result = spawnSync("cmd.exe", ["/d", "/s", "/c", escaped], common);
+    } else {
+      result = spawnSync(file, args, common);
+    }
+
+    if (result?.error || result?.status !== 0) return null;
+    const text = [result.stdout, result.stderr]
+      .filter(Boolean)
+      .map((value) => String(value).trim())
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    return text || null;
+  } catch {
+    return null;
   }
 }
 
@@ -45,7 +61,7 @@ async function runDiagnostics(config, environmentManager) {
     key: "java",
     label: "Java",
     ok: Boolean(javaValue),
-    detail: javaValue ? `${javaValue} · ${tools?.java?.exe || "PATH système"}` : (tools?.java?.found ? `Installation détectée : ${tools.java.exe}` : "Introuvable"),
+    detail: javaValue ? `${javaValue.split(/\r?\n/)[0]} · ${tools?.java?.exe || "PATH système"}` : (tools?.java?.found ? `Installation détectée : ${tools.java.exe}` : "Introuvable"),
     repairable: !javaValue && Boolean(tools?.java?.found),
     repair: !javaValue && tools?.java?.found ? "Ajouter Java au PATH interne du launcher et définir JAVA_HOME" : null
   });
@@ -53,7 +69,7 @@ async function runDiagnostics(config, environmentManager) {
     key: "node",
     label: "Node.js",
     ok: Boolean(nodeValue),
-    detail: nodeValue ? `${nodeValue} · ${tools?.node?.exe || "PATH système"}` : (tools?.node?.found ? `Installation détectée : ${tools.node.exe}` : "Introuvable"),
+    detail: nodeValue ? `${nodeValue.split(/\r?\n/)[0]} · ${tools?.node?.exe || "PATH système"}` : (tools?.node?.found ? `Installation détectée : ${tools.node.exe}` : "Introuvable"),
     repairable: !nodeValue && Boolean(tools?.node?.found),
     repair: !nodeValue && tools?.node?.found ? "Ajouter Node.js au PATH interne du launcher" : null
   });
@@ -61,12 +77,12 @@ async function runDiagnostics(config, environmentManager) {
     key: "npm",
     label: "npm",
     ok: Boolean(npmValue),
-    detail: npmValue ? `${npmValue} · ${tools?.npm?.exe || "PATH système"}` : (tools?.npm?.found ? `Installation détectée : ${tools.npm.exe}` : "Introuvable"),
+    detail: npmValue ? `${npmValue.split(/\r?\n/)[0]} · ${tools?.npm?.exe || "PATH système"}` : (tools?.npm?.found ? `Installation détectée : ${tools.npm.exe}` : "Introuvable"),
     repairable: !npmValue && Boolean(tools?.npm?.found),
     repair: !npmValue && tools?.npm?.found ? "Utiliser le npm.cmd détecté avec le PATH interne du launcher" : null
   });
-  checks.push({ key: "docker", label: "Docker CLI", ok: Boolean(dockerValue), detail: dockerValue || "Introuvable" });
-  checks.push({ key: "docker-compose", label: "Docker Compose", ok: Boolean(composeValue), detail: composeValue || "Introuvable" });
+  checks.push({ key: "docker", label: "Docker CLI", ok: Boolean(dockerValue), detail: dockerValue?.split(/\r?\n/)[0] || "Introuvable" });
+  checks.push({ key: "docker-compose", label: "Docker Compose", ok: Boolean(composeValue), detail: composeValue?.split(/\r?\n/)[0] || "Introuvable" });
 
   const dockerEngine = environmentManager ? await environmentManager.dockerEngine() : null;
   checks.push({
