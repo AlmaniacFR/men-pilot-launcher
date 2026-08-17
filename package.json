@@ -2,7 +2,7 @@
   "name": "men-pilot-launcher",
   "version": "2.0.0",
   "description": "Local control center and developer launcher for MEN Pilot",
-  "main": "src/main.js",
+  "main": "src/main-v32.js",
   "private": true,
   "scripts": {
     "start": "electron .",
