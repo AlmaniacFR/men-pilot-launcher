@@ -1,8 +1,19 @@
 {
   "releases": [
     {
-      "version": "2.1.0",
+      "version": "2.2.0",
       "status": "planned",
+      "title": "Mandatory updates & visual roadmap",
+      "lots": [
+        "Vérification de version obligatoire avant utilisation du Control Center",
+        "Téléchargement et installation silencieuse automatiques des mises à jour",
+        "Verrouillage de toutes les actions du launcher tant qu'une mise à jour obligatoire n'est pas appliquée",
+        "Roadmap MEN Pilot en colonnes visuelles par tranches et sous-lots"
+      ]
+    },
+    {
+      "version": "2.1.0",
+      "status": "released",
       "title": "Control Center & project visibility",
       "lots": [
         "Pilotage natif de Docker Desktop et PostgreSQL",
@@ -13,7 +24,7 @@
     },
     {
       "version": "2.0.0",
-      "status": "installed-baseline",
+      "status": "historical",
       "title": "Launcher desktop complet",
       "lots": [
         "Dashboard services et health checks",
