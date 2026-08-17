@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Syntax check main process
+      - name: Syntax check launcher
         shell: pwsh
         run: |
           $files = @(
@@ -45,6 +45,13 @@ jobs:
             "src/launcher/session-store.js",
             "src/launcher/task-runner.js",
             "src/launcher/update-manager.js",
+            "src/launcher/health-manager.js",
+            "src/launcher/database-manager.js",
+            "src/launcher/git-manager.js",
+            "src/launcher/quality-store.js",
+            "src/launcher/storage-manager.js",
+            "src/launcher/journal-manager.js",
+            "src/launcher/assistant-manager.js",
             "src/renderer/app.js"
           )
           foreach ($file in $files) {
