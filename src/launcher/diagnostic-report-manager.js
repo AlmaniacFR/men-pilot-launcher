@@ -6,7 +6,7 @@ function redact(value) {
   if (value == null) return value;
   let text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
   text = text
-    .replace(/(?i)(password|passwd|pwd|secret|token|api[_-]?key|client[_-]?secret)\s*[:=]\s*[^\s,;\"']+/g, "$1=[REDACTED]")
+    .replace(/(password|passwd|pwd|secret|token|api[_-]?key|client[_-]?secret)\s*[:=]\s*[^\s,;\"']+/gi, "$1=[REDACTED]")
     .replace(/Bearer\s+[A-Za-z0-9._~+\/-]+=*/gi, "Bearer [REDACTED]")
     .replace(/postgres(?:ql)?:\/\/[^\s@]+@/gi, "postgresql://[REDACTED]@");
   return text;
