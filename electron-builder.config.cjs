@@ -37,13 +37,14 @@ module.exports = {
     icon: "assets/men-pilot.ico"
   },
   nsis: {
-    oneClick: false,
+    oneClick: true,
     perMachine: false,
-    allowToChangeInstallationDirectory: true,
+    allowToChangeInstallationDirectory: false,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: "MEN Pilot Launcher",
-    deleteAppDataOnUninstall: false
+    deleteAppDataOnUninstall: false,
+    runAfterFinish: true
   },
   publish
 };
