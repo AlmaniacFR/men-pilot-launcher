@@ -1,8 +1,21 @@
 {
   "releases": [
     {
-      "version": "3.0.0",
+      "version": "3.1.0",
       "status": "planned",
+      "title": "Finition visuelle et lisibilité",
+      "lots": [
+        "Intégration du logo officiel MEN Pilot fourni par le propriétaire du projet",
+        "Nouveau thème sombre et thème clair aux couleurs bleues du logo",
+        "Correction complète de l'affichage des états des services et suppression des badges circulaires déformés",
+        "Assistant enrichi avec un compte-rendu dépliable des actions réellement exécutées",
+        "Roadmap reformulée en français courant avec suppression du jargon technique dans les cartes",
+        "Conservation des détails techniques uniquement dans la fenêtre ouverte au clic sur une étape"
+      ]
+    },
+    {
+      "version": "3.0.0",
+      "status": "released",
       "title": "Cockpit complet MEN Pilot",
       "lots": [
         "Centre de santé global avec actions de réparation ciblées",

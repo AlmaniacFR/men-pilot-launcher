@@ -52,7 +52,8 @@ jobs:
             "src/launcher/storage-manager.js",
             "src/launcher/journal-manager.js",
             "src/launcher/assistant-manager.js",
-            "src/renderer/app.js"
+            "src/renderer/app.js",
+            "src/renderer/ux-v31.js"
           )
           foreach ($file in $files) {
             Write-Host "Checking $file"
@@ -73,7 +74,9 @@ jobs:
             "assets/men-pilot.ico",
             "assets/men-pilot.png",
             "src/renderer/index.html",
-            "src/renderer/styles.css"
+            "src/renderer/styles.css",
+            "src/renderer/ux-v31.css",
+            "src/renderer/ux-v31.js"
           )
           foreach ($file in $required) {
             if (-not (Test-Path $file)) { throw "Missing required file: $file" }

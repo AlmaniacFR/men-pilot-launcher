@@ -11,3 +11,15 @@ contextBridge.exposeInMainWorld("men",{
   clearHistory:()=>ipcRenderer.invoke("men:clear-history"),openApplication:()=>ipcRenderer.invoke("men:open-application"),openBackend:()=>ipcRenderer.invoke("men:open-backend"),openSwagger:()=>ipcRenderer.invoke("men:open-swagger"),openPgadmin:()=>ipcRenderer.invoke("men:open-pgadmin"),openWorkspace:()=>ipcRenderer.invoke("men:open-workspace"),openRoadmapFile:()=>ipcRenderer.invoke("men:open-roadmap-file"),openLogDirectory:()=>ipcRenderer.invoke("men:open-log-directory"),openGitHub:()=>ipcRenderer.invoke("men:open-github"),openBackupDir:()=>ipcRenderer.invoke("men:open-backup-dir"),
   onState:handler=>on("men:state",handler),onLog:handler=>on("men:log",handler),onTask:handler=>on("men:task",handler),onUpdate:handler=>on("men:update",handler),onSession:handler=>on("men:session",handler)
 });
+
+// Couche UX V3.1 : chargée depuis le renderer sans modifier le cœur fonctionnel du launcher.
+window.addEventListener("DOMContentLoaded",()=>{
+  const css=document.createElement("link");
+  css.rel="stylesheet";
+  css.href="./ux-v31.css";
+  document.head.appendChild(css);
+  const script=document.createElement("script");
+  script.src="./ux-v31.js";
+  script.defer=true;
+  document.body.appendChild(script);
+},{once:true});
