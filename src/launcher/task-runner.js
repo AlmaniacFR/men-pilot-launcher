@@ -4,9 +4,6 @@ const { runOneShot } = require("./process-utils");
 
 function parseTests(kind, lines) {
   const text = lines.join("\n");
-  const summaries = [];
-
-  // Maven Surefire: Tests run: 182, Failures: 0, Errors: 0, Skipped: 0
   const maven = [...text.matchAll(/Tests run:\s*(\d+),\s*Failures:\s*(\d+),\s*Errors:\s*(\d+),\s*Skipped:\s*(\d+)/gi)];
   if (maven.length) {
     let tests = 0, failures = 0, errors = 0, skipped = 0;
@@ -15,22 +12,18 @@ function parseTests(kind, lines) {
     }
     return { tests, passed: Math.max(0, tests - failures - errors - skipped), failures, errors, skipped };
   }
-
-  // Vitest / modern Angular test runner common summary lines.
   const vitestTests = text.match(/Tests\s+(\d+)\s+passed(?:\s*\|\s*(\d+)\s+failed)?/i);
   if (vitestTests) {
     const passed = Number(vitestTests[1] || 0);
     const failures = Number(vitestTests[2] || 0);
     return { tests: passed + failures, passed, failures, errors: 0, skipped: 0 };
   }
-
   const karma = text.match(/Executed\s+(\d+)\s+of\s+(\d+).*?(SUCCESS|FAILED)/i);
   if (karma) {
     const tests = Number(karma[2]);
     const ok = karma[3].toUpperCase() === "SUCCESS";
     return { tests, passed: ok ? tests : null, failures: ok ? 0 : null, errors: 0, skipped: 0 };
   }
-
   return null;
 }
 
@@ -54,7 +47,13 @@ class TaskRunner extends EventEmitter {
 
   env() {
     const cfg = this.cfg();
-    return cfg.profiles?.[cfg.activeProfile]?.env || {};
+    const resolved = cfg.environment?.resolved || {};
+    const additions = [resolved.javaBin, resolved.nodeBin].filter(Boolean);
+    return {
+      ...(resolved.javaHome ? { JAVA_HOME: resolved.javaHome } : {}),
+      PATH: [...additions, process.env.PATH || ""].join(";"),
+      ...(cfg.profiles?.[cfg.activeProfile]?.env || {})
+    };
   }
 
   cwdFor(kind) {
@@ -64,9 +63,7 @@ class TaskRunner extends EventEmitter {
     return workspace;
   }
 
-  commandFor(kind) {
-    return this.cfg().tasks?.[kind] || "";
-  }
+  commandFor(kind) { return this.cfg().tasks?.[kind] || ""; }
 
   async run(kind, options = {}) {
     if (this.running.has(kind)) return { ok: false, error: "Cette tâche est déjà en cours." };
@@ -86,26 +83,11 @@ class TaskRunner extends EventEmitter {
         if (lines.length > 5000) lines.splice(0, lines.length - 5000);
         this.log(kind, line, level);
       }, this.env());
-
       const durationMs = Date.now() - started;
       const summary = kind.endsWith("Tests") ? parseTests(kind, lines) : null;
-      const output = {
-        kind,
-        ok: result.code === 0,
-        code: result.code,
-        durationMs,
-        at: new Date().toISOString(),
-        summary,
-        tail: lines.slice(-30)
-      };
+      const output = { kind, ok: result.code === 0, code: result.code, durationMs, at: new Date().toISOString(), summary, tail: lines.slice(-30) };
       this.lastResults[kind] = output;
-      this.historyStore.add({
-        service: "tasks",
-        action: kind,
-        outcome: output.ok ? "success" : "error",
-        durationMs,
-        detail: summary ? JSON.stringify(summary) : `code=${result.code}`
-      });
+      this.historyStore.add({ service: "tasks", action: kind, outcome: output.ok ? "success" : "error", durationMs, detail: summary ? JSON.stringify(summary) : `code=${result.code}` });
       if (kind.endsWith("Tests")) this.sessionStore.addTest(output);
       if (!output.ok) this.sessionStore.incrementError();
       return output;
@@ -115,9 +97,7 @@ class TaskRunner extends EventEmitter {
     }
   }
 
-  snapshot() {
-    return { running: [...this.running], lastResults: this.lastResults };
-  }
+  snapshot() { return { running: [...this.running], lastResults: this.lastResults }; }
 }
 
 module.exports = { TaskRunner };
