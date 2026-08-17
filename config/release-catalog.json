@@ -1,8 +1,23 @@
 {
   "releases": [
     {
-      "version": "2.2.0",
+      "version": "3.0.0",
       "status": "planned",
+      "title": "Cockpit complet MEN Pilot",
+      "lots": [
+        "Centre de santé global avec actions de réparation ciblées",
+        "Snapshots PostgreSQL, restauration sécurisée et historique Flyway",
+        "Cockpit Git avec état, synchronisation et modifications locales",
+        "Historique qualité persistant pour les tests backend et frontend",
+        "Analyse du stockage et nettoyage contrôlé des caches de développement",
+        "Journal de développement avec sessions, temps de travail, erreurs et commits",
+        "Assistant local de diagnostic croisant santé, Git, qualité et roadmap",
+        "Roadmap interactive avec résumés métier en français et fenêtre de détails techniques"
+      ]
+    },
+    {
+      "version": "2.2.0",
+      "status": "released",
       "title": "Mandatory updates & visual roadmap",
       "lots": [
         "Vérification de version obligatoire avant utilisation du Control Center",
