@@ -1,40 +1,193 @@
-name: Release MEN Pilot Launcher
+name: MEN Pilot Launcher - Auto Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version a publier (ex: 2.0.1)"
-        required: true
-        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "config/**"
+      - "assets/**"
+      - "package.json"
+      - "package-lock.json"
+      - "electron-builder.config.cjs"
+      - ".github/workflows/men-pilot-launcher-release.yml"
 
 permissions:
   contents: write
 
+concurrency:
+  group: men-pilot-launcher-release
+  cancel-in-progress: false
+
 jobs:
-  release-windows:
+  release:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout complete history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute next version
+        id: version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          git fetch --tags --force
+
+          $headTags = @(git tag --points-at HEAD --list "v*")
+          if ($headTags.Count -gt 0) {
+            Write-Host "HEAD already has a release tag: $($headTags -join ', ')"
+            "should_release=false" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+
+          $package = Get-Content package.json -Raw | ConvertFrom-Json
+          $packageVersion = [string]$package.version
+
+          $latestTag = git tag --list "v*" --sort=-v:refname | Select-Object -First 1
+
+          if ($latestTag) {
+            $currentVersion = $latestTag.TrimStart("v")
+            $messages = git log "$latestTag..HEAD" --pretty=format:"%B"
+          } else {
+            $currentVersion = $packageVersion
+            $messages = git log --pretty=format:"%B"
+          }
+
+          if (-not ($currentVersion -match '^\d+\.\d+\.\d+$')) {
+            throw "Unsupported current version: $currentVersion"
+          }
+
+          $parts = $currentVersion.Split(".")
+          $major = [int]$parts[0]
+          $minor = [int]$parts[1]
+          $patch = [int]$parts[2]
+
+          $allMessages = ($messages -join "`n")
+          $bump = "patch"
+
+          if (
+            $allMessages -match '(?im)^BREAKING CHANGE:' -or
+            $allMessages -match '(?im)^[a-z]+(\([^)]+\))?!:' -or
+            $allMessages -match '(?i)\[major\]'
+          ) {
+            $bump = "major"
+          }
+          elseif (
+            $allMessages -match '(?im)^feat(\([^)]+\))?:' -or
+            $allMessages -match '(?i)\[minor\]'
+          ) {
+            $bump = "minor"
+          }
+
+          switch ($bump) {
+            "major" {
+              $major++
+              $minor = 0
+              $patch = 0
+            }
+            "minor" {
+              $minor++
+              $patch = 0
+            }
+            default {
+              $patch++
+            }
+          }
+
+          $nextVersion = "$major.$minor.$patch"
+          Write-Host "Current version : $currentVersion"
+          Write-Host "Bump            : $bump"
+          Write-Host "Next version    : $nextVersion"
+
+          "should_release=true" >> $env:GITHUB_OUTPUT
+          "version=$nextVersion" >> $env:GITHUB_OUTPUT
+          "tag=v$nextVersion" >> $env:GITHUB_OUTPUT
+          "bump=$bump" >> $env:GITHUB_OUTPUT
 
       - name: Setup Node.js
+        if: steps.version.outputs.should_release == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: "24"
+          cache: "npm"
 
       - name: Install dependencies
+        if: steps.version.outputs.should_release == 'true'
         shell: pwsh
-        run: npm install
+        run: npm ci
 
-      - name: Set launcher version
+      - name: Stamp release version
+        if: steps.version.outputs.should_release == 'true'
         shell: pwsh
-        run: npm version "${{ inputs.version }}" --no-git-tag-version
+        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version
 
-      - name: Build and publish GitHub Release
+      - name: Build Windows installer and updater metadata
+        if: steps.version.outputs.should_release == 'true'
         shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.MEN_LAUNCHER_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
-          MEN_LAUNCHER_GITHUB_REPOSITORY: ${{ vars.MEN_LAUNCHER_RELEASE_REPOSITORY || github.repository }}
-        run: npm run publish
+          MEN_LAUNCHER_GITHUB_REPOSITORY: ${{ github.repository }}
+        run: npm run dist
+
+      - name: Validate updater artifacts
+        if: steps.version.outputs.should_release == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if (-not (Test-Path "dist/latest.yml")) {
+            throw "dist/latest.yml was not generated."
+          }
+
+          $installer = Get-ChildItem "dist" -Filter "*.exe" | Where-Object {
+            $_.Name -notmatch "uninstaller"
+          } | Select-Object -First 1
+
+          if (-not $installer) {
+            throw "No Windows installer was generated."
+          }
+
+          $blockmap = Get-ChildItem "dist" -Filter "*.blockmap" | Select-Object -First 1
+          if (-not $blockmap) {
+            throw "No blockmap was generated."
+          }
+
+          Write-Host "Installer : $($installer.FullName)"
+          Write-Host "Blockmap  : $($blockmap.FullName)"
+          Write-Host "Metadata  : dist/latest.yml"
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.should_release == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $tag = "${{ steps.version.outputs.tag }}"
+          $version = "${{ steps.version.outputs.version }}"
+
+          $installerFiles = @(Get-ChildItem "dist" -Filter "*.exe" | ForEach-Object { $_.FullName })
+          $blockmapFiles = @(Get-ChildItem "dist" -Filter "*.blockmap" | ForEach-Object { $_.FullName })
+          $metadata = (Resolve-Path "dist/latest.yml").Path
+
+          $assets = @()
+          $assets += $installerFiles
+          $assets += $blockmapFiles
+          $assets += $metadata
+
+          gh release create $tag `
+            @assets `
+            --repo "${{ github.repository }}" `
+            --target "${{ github.sha }}" `
+            --title "MEN Pilot Launcher v$version" `
+            --generate-notes `
+            --latest
+
+          Write-Host ""
+          Write-Host "Release $tag published successfully."

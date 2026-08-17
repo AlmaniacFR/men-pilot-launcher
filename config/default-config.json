@@ -74,7 +74,7 @@
     "autoCheck": true,
     "autoDownload": true,
     "checkIntervalHours": 6,
-    "genericUrl": "",
+    "genericUrl": "https://github.com/AlmaniacFR/men-pilot-launcher/releases/latest/download",
     "channel": "latest"
   }
 }

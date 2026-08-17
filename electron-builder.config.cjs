@@ -1,7 +1,14 @@
 const path = require("path");
 
-const githubRepository = process.env.MEN_LAUNCHER_GITHUB_REPOSITORY || process.env.GITHUB_REPOSITORY || "";
-const updateUrl = process.env.MEN_LAUNCHER_UPDATE_URL || "https://updates.invalid/men-pilot-launcher";
+const DEFAULT_GITHUB_REPOSITORY = "AlmaniacFR/men-pilot-launcher";
+const githubRepository =
+  process.env.MEN_LAUNCHER_GITHUB_REPOSITORY ||
+  process.env.GITHUB_REPOSITORY ||
+  DEFAULT_GITHUB_REPOSITORY;
+
+const updateUrl =
+  process.env.MEN_LAUNCHER_UPDATE_URL ||
+  "https://github.com/AlmaniacFR/men-pilot-launcher/releases/latest/download";
 
 let publish;
 if (githubRepository.includes("/")) {
