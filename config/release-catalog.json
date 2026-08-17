@@ -1,0 +1,37 @@
+{
+  "releases": [
+    {
+      "version": "2.1.0",
+      "status": "planned",
+      "title": "Control Center & project visibility",
+      "lots": [
+        "Pilotage natif de Docker Desktop et PostgreSQL",
+        "Diagnostic Java / Node / npm avec réparation du PATH du launcher",
+        "Roadmap MEN Pilot intégrée depuis docs/ROADMAP.md",
+        "Historique des versions et lots livrés dans l'espace Mises à jour"
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "status": "installed-baseline",
+      "title": "Launcher desktop complet",
+      "lots": [
+        "Dashboard services et health checks",
+        "Logs, historique et sessions développeur",
+        "Tests backend/frontend et outils de maintenance",
+        "Git, Docker, PostgreSQL et Flyway",
+        "Mises à jour automatiques Electron"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "status": "historical",
+      "title": "Fondation du launcher",
+      "lots": [
+        "Démarrage et arrêt PostgreSQL / Spring Boot / Angular",
+        "Détection des ports et processus externes",
+        "Console et historique local"
+      ]
+    }
+  ]
+}

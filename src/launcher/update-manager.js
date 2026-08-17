@@ -18,7 +18,10 @@ class UpdateManager extends EventEmitter {
       progress: null,
       downloaded: false,
       error: null,
-      checkedAt: null
+      checkedAt: null,
+      releaseNotes: null,
+      releaseName: null,
+      catalogue: this.loadCatalogue()
     };
 
     autoUpdater.autoInstallOnAppQuit = true;
@@ -27,9 +30,17 @@ class UpdateManager extends EventEmitter {
 
   config() { return this.configStore.get().updates || {}; }
 
-  emitState() {
-    this.emit("state", this.snapshot());
+  loadCatalogue() {
+    try {
+      const file = path.join(__dirname, "..", "..", "config", "release-catalog.json");
+      const value = JSON.parse(fs.readFileSync(file, "utf8"));
+      return Array.isArray(value?.releases) ? value.releases : [];
+    } catch {
+      return [];
+    }
   }
+
+  emitState() { this.emit("state", this.snapshot()); }
 
   hasConfiguredFeed() {
     const cfg = this.config();
@@ -45,7 +56,7 @@ class UpdateManager extends EventEmitter {
   }
 
   snapshot() {
-    return { ...this.state };
+    return { ...this.state, catalogue: this.loadCatalogue() };
   }
 
   configureFeed() {
@@ -53,10 +64,7 @@ class UpdateManager extends EventEmitter {
     autoUpdater.autoDownload = cfg.autoDownload !== false;
     autoUpdater.allowPrerelease = cfg.channel && cfg.channel !== "latest";
     if (cfg.channel) autoUpdater.channel = cfg.channel;
-
-    if (cfg.genericUrl) {
-      autoUpdater.setFeedURL({ provider: "generic", url: cfg.genericUrl });
-    }
+    if (cfg.genericUrl) autoUpdater.setFeedURL({ provider: "generic", url: cfg.genericUrl });
   }
 
   bind() {
@@ -70,13 +78,23 @@ class UpdateManager extends EventEmitter {
         ...this.state,
         status: this.config().autoDownload === false ? "available" : "downloading",
         availableVersion: info.version,
+        releaseName: info.releaseName || null,
+        releaseNotes: info.releaseNotes || null,
         error: null
       };
       this.emitState();
     });
 
-    autoUpdater.on("update-not-available", () => {
-      this.state = { ...this.state, status: "up-to-date", availableVersion: null, downloaded: false, progress: null };
+    autoUpdater.on("update-not-available", (info) => {
+      this.state = {
+        ...this.state,
+        status: "up-to-date",
+        availableVersion: null,
+        downloaded: false,
+        progress: null,
+        releaseName: info?.releaseName || null,
+        releaseNotes: info?.releaseNotes || null
+      };
       this.emitState();
     });
 
@@ -99,6 +117,8 @@ class UpdateManager extends EventEmitter {
         ...this.state,
         status: "downloaded",
         availableVersion: info.version,
+        releaseName: info.releaseName || this.state.releaseName,
+        releaseNotes: info.releaseNotes || this.state.releaseNotes,
         downloaded: true,
         progress: { percent: 100 }
       };
@@ -118,7 +138,7 @@ class UpdateManager extends EventEmitter {
       return this.snapshot();
     }
     if (!this.hasConfiguredFeed()) {
-      this.state = { ...this.state, status: "unconfigured", error: "Aucun canal de mise à jour configuré. Configure une URL générique ou installe une build publiée via GitHub Releases." };
+      this.state = { ...this.state, status: "unconfigured", error: "Aucun canal de mise à jour configuré." };
       this.emitState();
       return this.snapshot();
     }
@@ -146,20 +166,24 @@ class UpdateManager extends EventEmitter {
 
   async install() {
     if (!this.state.downloaded) return { ok: false, error: "Aucune mise à jour téléchargée." };
-
-    // Le launcher mémorise les services qu'il contrôle, les arrête proprement,
-    // puis les relancera automatiquement après la mise à jour.
     await this.serviceManager.refreshStates();
     const snapshot = this.serviceManager.snapshot();
     const restoreServices = Object.values(snapshot.services)
-      .filter((service) => service.managed && service.portOpen)
+      .filter((service) => service.name !== "docker" && service.managed && service.portOpen)
       .map((service) => service.name);
 
-    this.runtimeStore.patch({ restoreServicesAfterUpdate: restoreServices });
+    this.runtimeStore.patch({
+      restoreServicesAfterUpdate: restoreServices,
+      lastInstalledUpdate: {
+        from: this.state.currentVersion,
+        to: this.state.availableVersion,
+        at: new Date().toISOString(),
+        releaseNotes: this.state.releaseNotes || null
+      }
+    });
     for (const name of [...restoreServices].reverse()) {
       try { await this.serviceManager.stopService(name); } catch {}
     }
-
     setTimeout(() => autoUpdater.quitAndInstall(false, true), 250);
     return { ok: true, restoring: restoreServices };
   }

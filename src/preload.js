@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld("men", {
   getConfig: () => ipcRenderer.invoke("men:get-config"),
   saveConfig: (config) => ipcRenderer.invoke("men:save-config", config),
   diagnostics: () => ipcRenderer.invoke("men:diagnostics"),
+  repairEnvironment: () => ipcRenderer.invoke("men:repair-environment"),
+  roadmap: () => ipcRenderer.invoke("men:roadmap"),
   projectOverview: () => ipcRenderer.invoke("men:project-overview"),
   taskSnapshot: () => ipcRenderer.invoke("men:task-snapshot"),
   runTask: (kind) => ipcRenderer.invoke("men:run-task", kind),
@@ -39,6 +41,7 @@ contextBridge.exposeInMainWorld("men", {
   openSwagger: () => ipcRenderer.invoke("men:open-swagger"),
   openPgadmin: () => ipcRenderer.invoke("men:open-pgadmin"),
   openWorkspace: () => ipcRenderer.invoke("men:open-workspace"),
+  openRoadmapFile: () => ipcRenderer.invoke("men:open-roadmap-file"),
   openLogDirectory: () => ipcRenderer.invoke("men:open-log-directory"),
 
   onState: (handler) => on("men:state", handler),

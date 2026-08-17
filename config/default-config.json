@@ -3,20 +3,31 @@
   "pollIntervalMs": 2000,
   "activeProfile": "dev",
   "profiles": {
-    "dev": {
-      "label": "DEV",
-      "env": {}
-    },
-    "test": {
-      "label": "TEST",
-      "env": {}
-    },
-    "demo": {
-      "label": "DEMO",
-      "env": {}
+    "dev": { "label": "DEV", "env": {} },
+    "test": { "label": "TEST", "env": {} },
+    "demo": { "label": "DEMO", "env": {} }
+  },
+  "docker": {
+    "autoStart": true,
+    "startupTimeoutMs": 120000,
+    "stopWithMenPilot": false
+  },
+  "environment": {
+    "resolved": {
+      "javaHome": "",
+      "javaBin": "",
+      "nodeBin": ""
     }
   },
   "services": {
+    "docker": {
+      "label": "Docker Desktop",
+      "kind": "docker-desktop",
+      "cwd": ".",
+      "port": null,
+      "startupTimeoutMs": 120000,
+      "healthUrl": ""
+    },
     "postgres": {
       "label": "PostgreSQL",
       "kind": "oneshot",
@@ -59,17 +70,13 @@
     "flywayMigrate": ".\\mvnw.cmd flyway:migrate",
     "databaseReset": "docker compose down -v && docker compose up -d postgres"
   },
-  "safety": {
-    "allowDatabaseReset": false
-  },
+  "safety": { "allowDatabaseReset": false },
   "notifications": {
     "enabled": true,
     "notifyOnCrash": true,
     "notifyOnBuildError": true
   },
-  "windows": {
-    "launchAtLogin": false
-  },
+  "windows": { "launchAtLogin": false },
   "updates": {
     "autoCheck": true,
     "autoDownload": true,

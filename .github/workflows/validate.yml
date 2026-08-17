@@ -1,0 +1,73 @@
+name: Validate MEN Pilot Launcher
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check main process
+        shell: pwsh
+        run: |
+          $files = @(
+            "src/main.js",
+            "src/preload.js",
+            "src/launcher/config-store.js",
+            "src/launcher/diagnostics.js",
+            "src/launcher/environment-manager.js",
+            "src/launcher/history-store.js",
+            "src/launcher/log-store.js",
+            "src/launcher/process-utils.js",
+            "src/launcher/project-inspector.js",
+            "src/launcher/roadmap-manager.js",
+            "src/launcher/runtime-store.js",
+            "src/launcher/service-manager.js",
+            "src/launcher/session-store.js",
+            "src/launcher/task-runner.js",
+            "src/launcher/update-manager.js",
+            "src/renderer/app.js"
+          )
+          foreach ($file in $files) {
+            Write-Host "Checking $file"
+            node --check $file
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Validate JSON configuration
+        shell: pwsh
+        run: |
+          Get-Content "config/default-config.json" -Raw | ConvertFrom-Json | Out-Null
+          Get-Content "config/release-catalog.json" -Raw | ConvertFrom-Json | Out-Null
+
+      - name: Verify packaged resources exist
+        shell: pwsh
+        run: |
+          $required = @(
+            "assets/men-pilot.ico",
+            "assets/men-pilot.png",
+            "src/renderer/index.html",
+            "src/renderer/styles.css"
+          )
+          foreach ($file in $required) {
+            if (-not (Test-Path $file)) { throw "Missing required file: $file" }
+          }
