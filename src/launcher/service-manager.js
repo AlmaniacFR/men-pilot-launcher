@@ -10,12 +10,13 @@ const {
 } = require("./process-utils");
 
 class ServiceManager extends EventEmitter {
-  constructor(configStore, historyStore, logStore, sessionStore) {
+  constructor(configStore, historyStore, logStore, sessionStore, environmentManager) {
     super();
     this.configStore = configStore;
     this.historyStore = historyStore;
     this.logStore = logStore;
     this.sessionStore = sessionStore;
+    this.environmentManager = environmentManager;
     this.children = new Map();
     this.states = new Map();
     this.startedAt = new Map();
@@ -45,30 +46,27 @@ class ServiceManager extends EventEmitter {
 
   profileEnv() {
     const cfg = this.config();
-    return cfg.profiles?.[cfg.activeProfile]?.env || {};
+    return {
+      ...(this.environmentManager?.runtimeEnv?.() || {}),
+      ...(cfg.profiles?.[cfg.activeProfile]?.env || {})
+    };
   }
 
   absCwd(service) {
     return path.resolve(this.config().workspace, service.cwd || ".");
   }
 
-  analyzeLine(service, message, level) {
+  analyzeLine(service, message) {
     if (service !== "frontend") return;
     const text = String(message || "");
     const current = this.buildStatus.get(service) || "unknown";
-
     const errorPattern = /(application bundle generation failed|compilation failed|failed to compile|\berror\s+ts\d+|\[error\]|✘ \[error\])/i;
     const successPattern = /(application bundle generation complete|compiled successfully|watch mode enabled|local:\s+http:\/\/localhost)/i;
-
     if (errorPattern.test(text)) {
       this.buildStatus.set(service, "error");
       if (current !== "error") {
         this.sessionStore.incrementError();
-        this.emit("notification", {
-          type: "build-error",
-          title: "MEN Pilot — erreur Angular",
-          body: text.slice(0, 240)
-        });
+        this.emit("notification", { type: "build-error", title: "MEN Pilot — erreur Angular", body: text.slice(0, 240) });
       }
     } else if (successPattern.test(text)) {
       this.buildStatus.set(service, "ok");
@@ -76,7 +74,7 @@ class ServiceManager extends EventEmitter {
   }
 
   log(service, message, level = "info") {
-    this.analyzeLine(service, message, level);
+    this.analyzeLine(service, message);
     const entry = this.logStore.append(service, level, message);
     this.emit("log", entry);
   }
@@ -91,16 +89,34 @@ class ServiceManager extends EventEmitter {
 
     for (const [name, service] of Object.entries(config.services)) {
       if (!this.states.has(name)) this.states.set(name, this.initialState(name));
-      const child = this.children.get(name);
-      const portOpen = await isPortOpen(service.port);
       const previous = this.states.get(name) || this.initialState(name);
-      const managed = Boolean(child && child.exitCode === null && !child.killed);
-      let pid = managed ? child.pid : null;
+
+      if (service.kind === "docker-desktop") {
+        const docker = await this.environmentManager.dockerEngine();
+        this.states.set(name, {
+          ...previous,
+          name,
+          status: docker.running ? "running" : "stopped",
+          portOpen: docker.running,
+          managed: docker.running,
+          pid: null,
+          startedAt: docker.running ? (previous.startedAt || null) : null,
+          lastError: docker.running ? null : previous.lastError
+        });
+        continue;
+      }
+
+      const child = this.children.get(name);
+      const portOpen = service.port ? await isPortOpen(service.port) : false;
+      const processManaged = Boolean(child && child.exitCode === null && !child.killed);
+      const composeManaged = service.kind === "oneshot" && portOpen;
+      const managed = processManaged || composeManaged;
+      let pid = processManaged ? child.pid : null;
       if (!pid && portOpen) pid = await findPidByPort(service.port);
 
       let status = "stopped";
       if (portOpen) status = managed ? "running" : "external";
-      else if (managed) status = previous.status === "error" ? "error" : "starting";
+      else if (processManaged) status = previous.status === "error" ? "error" : "starting";
       else if (previous.status === "stopping") status = "stopping";
       else if (previous.status === "error") status = "error";
 
@@ -114,7 +130,6 @@ class ServiceManager extends EventEmitter {
         startedAt: this.startedAt.get(name) || previous.startedAt || null,
         buildStatus: name === "frontend" ? (this.buildStatus.get(name) || previous.buildStatus || "unknown") : null
       };
-
       if (status === "stopped") {
         next.startedAt = null;
         this.startedAt.delete(name);
@@ -156,10 +171,31 @@ class ServiceManager extends EventEmitter {
     const service = config.services[name];
     if (!service) throw new Error(`Service inconnu: ${name}`);
 
+    if (service.kind === "docker-desktop") {
+      const started = Date.now();
+      this.record(name, "start", "requested");
+      this.log(name, "Démarrage de Docker Desktop...");
+      const result = await this.environmentManager.startDockerDesktop();
+      await this.refreshStates();
+      this.record(name, "start", result.ok ? "success" : "error", result.error || null, Date.now() - started);
+      if (!result.ok) this.log(name, result.error, "error");
+      else this.log(name, "Docker Engine disponible.");
+      return result;
+    }
+
+    if (name === "postgres" && config.docker?.autoStart !== false) {
+      const docker = await this.environmentManager.dockerEngine();
+      if (!docker.running) {
+        this.log(name, "Docker Engine indisponible : démarrage automatique de Docker Desktop.");
+        const dockerStart = await this.startService("docker");
+        if (!dockerStart.ok) return dockerStart;
+      }
+    }
+
     await this.refreshStates();
     const current = this.states.get(name);
     if (current?.portOpen) {
-      this.log(name, `Le port ${service.port} répond déjà. Aucun nouveau processus lancé.`);
+      this.log(name, `Le service répond déjà${service.port ? ` sur le port ${service.port}` : ""}. Aucun nouveau processus lancé.`);
       this.record(name, "start", "skipped", "Déjà actif");
       return { ok: true, skipped: true };
     }
@@ -229,6 +265,7 @@ class ServiceManager extends EventEmitter {
       return { ok: false, error: detail };
     }
 
+    if (service.kind === "oneshot") this.startedAt.set(name, new Date().toISOString());
     await this.refreshStates();
     this.record(name, "start", "success", `Port ${service.port} disponible`, Date.now() - started);
     this.log(name, `Service prêt sur le port ${service.port}.`);
@@ -239,6 +276,19 @@ class ServiceManager extends EventEmitter {
     const config = this.config();
     const service = config.services[name];
     if (!service) throw new Error(`Service inconnu: ${name}`);
+
+    if (service.kind === "docker-desktop") {
+      const postgres = this.states.get("postgres");
+      if (postgres?.portOpen) {
+        return { ok: false, error: "Arrête PostgreSQL avant d'arrêter Docker Desktop." };
+      }
+      const started = Date.now();
+      this.record(name, "stop", "requested");
+      const result = await this.environmentManager.stopDockerDesktop();
+      await this.refreshStates();
+      this.record(name, "stop", result.ok ? "success" : "error", result.error || null, Date.now() - started);
+      return result;
+    }
 
     const started = Date.now();
     const state = this.states.get(name) || {};
@@ -256,6 +306,7 @@ class ServiceManager extends EventEmitter {
         await this.refreshStates();
         return { ok: false, error: detail };
       }
+      this.startedAt.delete(name);
     } else {
       const child = this.children.get(name);
       if (child?.pid) {
@@ -301,7 +352,7 @@ class ServiceManager extends EventEmitter {
   async startAll() {
     if (this.operationLock) return { ok: false, error: "Une opération globale est déjà en cours." };
     this.operationLock = true;
-    const sequence = ["postgres", "backend", "frontend"];
+    const sequence = ["docker", "postgres", "backend", "frontend"];
     const results = {};
     try {
       this.record("all", "start-all", "requested", `profil=${this.config().activeProfile}`);
@@ -329,6 +380,7 @@ class ServiceManager extends EventEmitter {
         if (!this.config().services[name]) continue;
         results[name] = await this.stopService(name);
       }
+      if (this.config().docker?.stopWithMenPilot) results.docker = await this.stopService("docker");
       const ok = Object.values(results).every((r) => r.ok || r.external);
       this.record("all", "stop-all", ok ? "success" : "error");
       return { ok, results };
