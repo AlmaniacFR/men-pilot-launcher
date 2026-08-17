@@ -24,16 +24,21 @@ class RestorePointManager {
   async create(label = "") {
     const git = await this.gitManager.snapshot();
     if (!git.available) return { ok:false, error:git.error || "Git indisponible." };
+    if (git.dirty) return { ok:false, error:"Création refusée : le dépôt contient des modifications non enregistrées. Commit ou stash les changements pour obtenir un point restaurable sans ambiguïté." };
     const backup = await this.databaseManager.createBackup();
     if (!backup.ok) return { ok:false, error:"Impossible de créer le snapshot PostgreSQL requis." };
     const stamp = new Date().toISOString().replace(/[:.]/g,"-");
     const dir = path.join(this.root, `${stamp}-${safeName(label || git.branch)}`); fs.mkdirSync(dir, { recursive:true });
     const cfg = this.configStore.get();
+    const embeddedBackup = path.join(dir, "database.dump");
+    fs.copyFileSync(backup.backup.file, embeddedBackup);
     fs.writeFileSync(path.join(dir,"launcher-config.json"), JSON.stringify(cfg,null,2), "utf8");
     const manifest = {
       id:path.basename(dir), label:label || `Point avant modification sur ${git.branch}`, createdAt:new Date().toISOString(),
-      git:{ branch:git.branch, commit:git.commit, dirty:git.dirty, changedFiles:git.changedFiles },
-      databaseBackup:backup.backup.file,
+      git:{ branch:git.branch, commit:git.commit, dirty:false, changedFiles:0 },
+      databaseBackup:embeddedBackup,
+      originalDatabaseBackup:backup.backup.file,
+      configFile:path.join(dir,"launcher-config.json"),
       workspace:cfg.workspace
     };
     fs.writeFileSync(path.join(dir,"manifest.json"),JSON.stringify(manifest,null,2),"utf8");
@@ -58,6 +63,9 @@ class RestorePointManager {
     if (checkout.code !== 0) return {ok:false,error:checkout.stderr || "Impossible de restaurer le commit Git.",safety:safety.restorePoint};
     const db = await this.databaseManager.restoreBackup(point.databaseBackup);
     if (!db.ok) return {ok:false,error:db.error || "Git restauré mais restauration DB échouée.",safety:safety.restorePoint};
+    try {
+      if (point.configFile && fs.existsSync(point.configFile)) this.configStore.save(JSON.parse(fs.readFileSync(point.configFile,"utf8")));
+    } catch {}
     this.historyStore.add({service:"restore",action:"restore",outcome:"success",detail:point.id});
     return {ok:true,restored:point,safety:safety.restorePoint,safetyBranch:branchName};
   }
