@@ -12,6 +12,10 @@
     "startupTimeoutMs": 120000,
     "stopWithMenPilot": false
   },
+  "database": {
+    "backupDir": "D:\\Workspaces\\men-pilot\\.men-pilot\\db-backups",
+    "retentionCount": 20
+  },
   "environment": {
     "resolved": {
       "javaHome": "",
@@ -66,6 +70,9 @@
   "tasks": {
     "backendTests": ".\\mvnw.cmd test",
     "frontendTests": "npm test -- --watch=false",
+    "backendBuild": ".\\mvnw.cmd -DskipTests package",
+    "frontendBuild": "npm run build",
+    "frontendInstall": "npm ci",
     "backendClean": ".\\mvnw.cmd clean",
     "flywayMigrate": ".\\mvnw.cmd flyway:migrate",
     "databaseReset": "docker compose down -v && docker compose up -d postgres"
