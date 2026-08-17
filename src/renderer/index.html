@@ -8,6 +8,21 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+  <div id="mandatoryUpdateGate" class="update-gate">
+    <div class="update-gate-card">
+      <img src="../../assets/men-pilot.png" class="update-gate-logo" alt="" />
+      <div class="update-gate-eyebrow">MEN PILOT LAUNCHER</div>
+      <h1 id="gateTitle">Vérification de la version</h1>
+      <div id="gateMessage" class="update-gate-message">Une vérification de mise à jour est obligatoire avant l'ouverture du Control Center.</div>
+      <div class="gate-version-row"><span id="gateCurrentVersion">Version installée —</span><span id="gateTargetVersion">Version cible —</span></div>
+      <div class="gate-progress-track"><div id="gateProgress" class="gate-progress-bar"></div></div>
+      <div id="gateProgressText" class="update-gate-progress-text">Connexion au canal de mise à jour...</div>
+      <div id="gateError" class="update-gate-error"></div>
+      <button id="gateRetry" class="btn primary update-gate-retry">Réessayer</button>
+      <div class="update-gate-foot">Les mises à jour sont téléchargées et installées automatiquement. Aucun assistant d'installation n'est affiché lors des mises à jour.</div>
+    </div>
+  </div>
+
   <div class="shell">
     <aside class="sidebar">
       <div class="brand">
@@ -63,13 +78,16 @@
         </div>
       </section>
 
-      <section id="section-roadmap" class="section">
-        <article class="panel">
-          <div class="panel-header"><div><h2>Roadmap MEN Pilot</h2><div class="muted">Lecture automatique de docs/ROADMAP.md dans le workspace MEN Pilot</div></div><div class="top-actions"><button id="openRoadmap" class="btn secondary">Ouvrir ROADMAP.md</button><button id="refreshRoadmap" class="btn primary">Actualiser</button></div></div>
-          <div id="roadmapSummary" class="metrics-grid roadmap-metrics"></div>
-          <div id="roadmapCurrent" class="roadmap-current"></div>
-          <div id="roadmapList" class="roadmap-list"></div>
-        </article>
+      <section id="section-roadmap" class="section roadmap-section">
+        <div class="roadmap-toolbar panel">
+          <div><h2>Roadmap MEN Pilot</h2><div class="muted">Vue par tranches et lots, alimentée automatiquement par docs/ROADMAP.md</div></div>
+          <div class="top-actions"><button id="openRoadmap" class="btn secondary">Ouvrir ROADMAP.md</button><button id="refreshRoadmap" class="btn primary">Actualiser</button></div>
+        </div>
+        <div id="roadmapSummary" class="metrics-grid roadmap-metrics"></div>
+        <div id="roadmapCurrent" class="roadmap-current"></div>
+        <div class="roadmap-scroll-shell">
+          <div id="roadmapList" class="roadmap-board"></div>
+        </div>
       </section>
 
       <section id="section-logs" class="section">
@@ -106,11 +124,12 @@
 
       <section id="section-updates" class="section">
         <article class="panel update-panel">
-          <div class="panel-header"><div><h2>Mises à jour du launcher</h2><div class="muted">Version installée, version disponible et contenu des lots</div></div><button id="checkUpdate" class="btn primary">Rechercher</button></div>
+          <div class="panel-header"><div><h2>Mises à jour du launcher</h2><div class="muted">Les mises à jour sont obligatoires et entièrement prises en charge par le launcher.</div></div><button id="checkUpdate" class="btn primary">Vérifier maintenant</button></div>
           <div id="updateStatus" class="update-status"></div>
           <div class="progress-track"><div id="updateProgress" class="progress-bar"></div></div>
           <div id="availableReleaseNotes" class="release-notes gap-top"></div>
-          <div class="action-grid gap-top"><button id="downloadUpdate" class="btn secondary">Télécharger</button><button id="installUpdate" class="btn primary">Installer et redémarrer</button></div>
+          <div class="notice gap-top">Lorsqu'une nouvelle version existe, le Control Center est verrouillé, la version est téléchargée automatiquement, les services gérés sont arrêtés proprement, puis l'installation s'effectue silencieusement et le launcher redémarre.</div>
+          <div class="action-grid gap-top"><button id="downloadUpdate" class="btn secondary">Relancer le téléchargement</button><button id="installUpdate" class="btn primary">Installer maintenant</button></div>
         </article>
         <article class="panel gap-top"><div class="panel-header"><div><h2>Historique des versions</h2><div class="muted">Lots fonctionnels apportés par chaque version du launcher</div></div></div><div id="releaseHistory" class="release-history"></div></article>
       </section>
@@ -122,7 +141,7 @@
             <label><span>Workspace MEN Pilot</span><input id="cfgWorkspace" type="text" /></label>
             <div class="form-grid"><label><span>Port PostgreSQL</span><input id="cfgPostgresPort" type="number" /></label><label><span>Port backend</span><input id="cfgBackendPort" type="number" /></label><label><span>Port frontend</span><input id="cfgFrontendPort" type="number" /></label></div>
             <label><span>URL application</span><input id="cfgApplicationUrl" type="text" /></label><label><span>URL backend</span><input id="cfgBackendUrl" type="text" /></label><label><span>URL Swagger</span><input id="cfgSwaggerUrl" type="text" /></label><label><span>URL pgAdmin (optionnel)</span><input id="cfgPgadminUrl" type="text" /></label><label><span>URL serveur de mises à jour générique</span><input id="cfgUpdateUrl" type="text" /></label>
-            <div class="toggle-row"><label class="check"><input id="cfgAutoUpdate" type="checkbox" /> Recherche automatique des mises à jour</label><label class="check"><input id="cfgAutoDownload" type="checkbox" /> Téléchargement automatique</label></div>
+            <div class="notice">Politique de mise à jour : vérification au démarrage, téléchargement automatique et installation obligatoire. Cette politique ne peut pas être désactivée dans le launcher.</div>
             <div class="toggle-row"><label class="check"><input id="cfgNotifications" type="checkbox" /> Notifications Windows</label><label class="check"><input id="cfgLaunchAtLogin" type="checkbox" /> Lancer avec Windows</label></div>
             <div class="toggle-row"><label class="check"><input id="cfgAutoStartDocker" type="checkbox" /> Démarrer Docker automatiquement avec MEN Pilot</label><label class="check"><input id="cfgStopDocker" type="checkbox" /> Arrêter Docker avec « Tout arrêter »</label></div>
             <div class="toggle-row"><label class="check danger-check"><input id="cfgAllowReset" type="checkbox" /> Autoriser le reset destructif de la DB locale</label></div>
