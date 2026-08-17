@@ -62,6 +62,34 @@ function parseRoadmapMarkdown(markdown) {
   return [...map.values()].sort(compare);
 }
 
+function groupRoadmap(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const groupId = item.id.split(".")[0];
+    if (!groups.has(groupId)) {
+      groups.set(groupId, { id: groupId, title: groupId, items: [], summary: { done: 0, current: 0, planned: 0, blocked: 0, total: 0 } });
+    }
+    const group = groups.get(groupId);
+    if (item.id === groupId) group.title = item.title || groupId;
+    else group.items.push(item);
+  }
+
+  for (const group of groups.values()) {
+    for (const item of group.items) {
+      group.summary[item.status] = (group.summary[item.status] || 0) + 1;
+      group.summary.total += 1;
+    }
+    const total = group.summary.total || 1;
+    group.progress = Math.round(((group.summary.done || 0) / total) * 100);
+    group.status = group.summary.blocked ? "blocked"
+      : group.summary.current ? "current"
+      : group.summary.planned ? "planned"
+      : "done";
+    group.current = group.items.find((item) => item.status === "current") || null;
+  }
+  return [...groups.values()];
+}
+
 class RoadmapManager {
   constructor(configStore) {
     this.configStore = configStore;
@@ -85,6 +113,7 @@ class RoadmapManager {
         available: false,
         file: null,
         items: [],
+        groups: [],
         summary: { done: 0, current: 0, planned: 0, blocked: 0, total: 0 },
         error: "Aucun ROADMAP.md n'a été trouvé dans le workspace MEN Pilot."
       };
@@ -101,13 +130,14 @@ class RoadmapManager {
         file,
         modifiedAt: fs.statSync(file).mtime.toISOString(),
         items,
+        groups: groupRoadmap(items),
         current,
         summary
       };
     } catch (error) {
-      return { available: false, file, items: [], summary: { total: 0 }, error: error?.message || String(error) };
+      return { available: false, file, items: [], groups: [], summary: { total: 0 }, error: error?.message || String(error) };
     }
   }
 }
 
-module.exports = { RoadmapManager, parseRoadmapMarkdown };
+module.exports = { RoadmapManager, parseRoadmapMarkdown, groupRoadmap };
