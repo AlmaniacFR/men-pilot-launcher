@@ -1,8 +1,20 @@
 {
   "releases": [
     {
-      "version": "3.1.0",
+      "version": "3.2.0",
       "status": "planned",
+      "title": "Pilotage & sécurité du développement",
+      "lots": [
+        "Rapport de diagnostic portable exporté en ZIP avec masquage des secrets détectables",
+        "Points de restauration associant commit Git, snapshot PostgreSQL et configuration du launcher",
+        "Contrôle automatique de préparation à une livraison avec liste des éléments bloquants",
+        "Télémétrie locale CPU, mémoire, disponibilité et historique des incidents",
+        "Passerelle Claude générant automatiquement un pack de contexte à partir de la roadmap, de Git, des tests, des documents projet et des logs"
+      ]
+    },
+    {
+      "version": "3.1.0",
+      "status": "released",
       "title": "Finition visuelle et lisibilité",
       "lots": [
         "Intégration du logo officiel MEN Pilot fourni par le propriétaire du projet",

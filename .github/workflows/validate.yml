@@ -31,6 +31,7 @@ jobs:
         run: |
           $files = @(
             "src/main.js",
+            "src/main-v32.js",
             "src/preload.js",
             "src/launcher/config-store.js",
             "src/launcher/diagnostics.js",
@@ -52,8 +53,14 @@ jobs:
             "src/launcher/storage-manager.js",
             "src/launcher/journal-manager.js",
             "src/launcher/assistant-manager.js",
+            "src/launcher/telemetry-manager.js",
+            "src/launcher/diagnostic-report-manager.js",
+            "src/launcher/restore-point-manager.js",
+            "src/launcher/release-readiness-manager.js",
+            "src/launcher/claude-context-manager.js",
             "src/renderer/app.js",
-            "src/renderer/ux-v31.js"
+            "src/renderer/ux-v31.js",
+            "src/renderer/pilotage-v32.js"
           )
           foreach ($file in $files) {
             Write-Host "Checking $file"
@@ -76,7 +83,9 @@ jobs:
             "src/renderer/index.html",
             "src/renderer/styles.css",
             "src/renderer/ux-v31.css",
-            "src/renderer/ux-v31.js"
+            "src/renderer/ux-v31.js",
+            "src/renderer/pilotage-v32.css",
+            "src/renderer/pilotage-v32.js"
           )
           foreach ($file in $required) {
             if (-not (Test-Path $file)) { throw "Missing required file: $file" }
