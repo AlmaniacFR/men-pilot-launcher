@@ -19,6 +19,8 @@ const { ServiceManager } = require("./launcher/service-manager");
 const { ProjectInspector } = require("./launcher/project-inspector");
 const { TaskRunner } = require("./launcher/task-runner");
 const { UpdateManager } = require("./launcher/update-manager");
+const { EnvironmentManager } = require("./launcher/environment-manager");
+const { RoadmapManager } = require("./launcher/roadmap-manager");
 const { runDiagnostics } = require("./launcher/diagnostics");
 
 const APP_ID = "fr.marseilleexpert.menpilot.launcher";
@@ -31,7 +33,7 @@ if (!gotLock) app.quit();
 let mainWindow = null;
 let tray = null;
 let configStore, historyStore, logStore, runtimeStore, sessionStore;
-let manager, inspector, taskRunner, updateManager;
+let manager, inspector, taskRunner, updateManager, environmentManager, roadmapManager;
 let quitting = false;
 
 const iconPath = path.join(__dirname, "..", "assets", "men-pilot.ico");
@@ -79,6 +81,7 @@ function createTray() {
     { type: "separator" },
     { label: "Démarrer MEN Pilot", click: () => manager.startAll() },
     { label: "Arrêter MEN Pilot", click: () => manager.stopAll() },
+    { label: "Démarrer Docker Desktop", click: () => manager.startService("docker") },
     { type: "separator" },
     { label: "Vérifier les mises à jour", click: () => updateManager.check() },
     { type: "separator" },
@@ -105,7 +108,7 @@ async function setProfile(profile) {
   const cfg = configStore.get();
   if (!cfg.profiles?.[profile]) return { ok: false, error: "Profil inconnu." };
   await manager.refreshStates();
-  if (Object.values(manager.snapshot().services).some((s) => s.portOpen)) {
+  if (Object.values(manager.snapshot().services).some((s) => s.name !== "docker" && s.portOpen)) {
     return { ok: false, error: "Arrête MEN Pilot avant de changer de profil." };
   }
   cfg.activeProfile = profile;
@@ -145,7 +148,13 @@ function registerIpc() {
     return saved;
   });
 
-  ipcMain.handle("men:diagnostics", () => runDiagnostics(configStore.get()));
+  ipcMain.handle("men:diagnostics", () => runDiagnostics(configStore.get(), environmentManager));
+  ipcMain.handle("men:repair-environment", async () => {
+    const result = await environmentManager.repairLauncherEnvironment();
+    historyStore.add({ service: "environment", action: "repair", outcome: result.ok ? "success" : "error", detail: JSON.stringify(result.resolved || {}) });
+    return { result, diagnostics: await runDiagnostics(configStore.get(), environmentManager) };
+  });
+  ipcMain.handle("men:roadmap", () => roadmapManager.snapshot());
   ipcMain.handle("men:project-overview", () => inspector.overview(manager.snapshot().services));
   ipcMain.handle("men:task-snapshot", () => taskRunner.snapshot());
   ipcMain.handle("men:run-task", (_e, kind) => taskRunner.run(kind));
@@ -190,6 +199,10 @@ function registerIpc() {
   ipcMain.handle("men:open-swagger", () => shell.openExternal(configStore.get().urls.swagger));
   ipcMain.handle("men:open-pgadmin", () => configStore.get().urls.pgadmin ? shell.openExternal(configStore.get().urls.pgadmin) : null);
   ipcMain.handle("men:open-workspace", () => shell.openPath(configStore.get().workspace));
+  ipcMain.handle("men:open-roadmap-file", () => {
+    const roadmap = roadmapManager.snapshot();
+    return roadmap.file ? shell.openPath(roadmap.file) : null;
+  });
   ipcMain.handle("men:open-log-directory", () => shell.openPath(logStore.getLogDirectory()));
 }
 
@@ -199,7 +212,9 @@ app.whenReady().then(async () => {
   logStore = new LogStore(app.getPath("userData"));
   runtimeStore = new RuntimeStore(app.getPath("userData"));
   sessionStore = new SessionStore(app.getPath("userData"));
-  manager = new ServiceManager(configStore, historyStore, logStore, sessionStore);
+  environmentManager = new EnvironmentManager(configStore);
+  roadmapManager = new RoadmapManager(configStore);
+  manager = new ServiceManager(configStore, historyStore, logStore, sessionStore, environmentManager);
   inspector = new ProjectInspector(configStore);
   taskRunner = new TaskRunner(configStore, historyStore, logStore, sessionStore);
   updateManager = new UpdateManager({ app, configStore, runtimeStore, serviceManager: manager });
@@ -235,9 +250,7 @@ app.on("before-quit", () => {
   updateManager?.stopSchedule();
 });
 
-app.on("window-all-closed", () => {
-  // Le launcher reste actif dans la zone de notification Windows.
-});
+app.on("window-all-closed", () => {});
 
 app.on("activate", () => {
   if (mainWindow) {
