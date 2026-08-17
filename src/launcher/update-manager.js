@@ -11,9 +11,12 @@ class UpdateManager extends EventEmitter {
     this.runtimeStore = runtimeStore;
     this.serviceManager = serviceManager;
     this.timer = null;
+    this.installScheduled = false;
     this.state = {
       currentVersion: app.getVersion(),
-      status: app.isPackaged ? "idle" : "development",
+      status: app.isPackaged ? "checking" : "development",
+      gate: app.isPackaged ? "checking" : "open",
+      mandatory: app.isPackaged,
       availableVersion: null,
       progress: null,
       downloaded: false,
@@ -25,6 +28,7 @@ class UpdateManager extends EventEmitter {
     };
 
     autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.autoDownload = true;
     this.bind();
   }
 
@@ -41,6 +45,7 @@ class UpdateManager extends EventEmitter {
   }
 
   emitState() { this.emit("state", this.snapshot()); }
+  isOperational() { return !this.app.isPackaged || this.state.gate === "open"; }
 
   hasConfiguredFeed() {
     const cfg = this.config();
@@ -61,7 +66,7 @@ class UpdateManager extends EventEmitter {
 
   configureFeed() {
     const cfg = this.config();
-    autoUpdater.autoDownload = cfg.autoDownload !== false;
+    autoUpdater.autoDownload = true;
     autoUpdater.allowPrerelease = cfg.channel && cfg.channel !== "latest";
     if (cfg.channel) autoUpdater.channel = cfg.channel;
     if (cfg.genericUrl) autoUpdater.setFeedURL({ provider: "generic", url: cfg.genericUrl });
@@ -69,14 +74,16 @@ class UpdateManager extends EventEmitter {
 
   bind() {
     autoUpdater.on("checking-for-update", () => {
-      this.state = { ...this.state, status: "checking", error: null, checkedAt: new Date().toISOString() };
+      this.state = { ...this.state, status: "checking", gate: "checking", error: null, checkedAt: new Date().toISOString() };
       this.emitState();
     });
 
     autoUpdater.on("update-available", (info) => {
       this.state = {
         ...this.state,
-        status: this.config().autoDownload === false ? "available" : "downloading",
+        status: "downloading",
+        gate: "locked",
+        mandatory: true,
         availableVersion: info.version,
         releaseName: info.releaseName || null,
         releaseNotes: info.releaseNotes || null,
@@ -89,11 +96,14 @@ class UpdateManager extends EventEmitter {
       this.state = {
         ...this.state,
         status: "up-to-date",
+        gate: "open",
+        mandatory: false,
         availableVersion: null,
         downloaded: false,
         progress: null,
         releaseName: info?.releaseName || null,
-        releaseNotes: info?.releaseNotes || null
+        releaseNotes: info?.releaseNotes || null,
+        error: null
       };
       this.emitState();
     });
@@ -102,6 +112,7 @@ class UpdateManager extends EventEmitter {
       this.state = {
         ...this.state,
         status: "downloading",
+        gate: "locked",
         progress: {
           percent: Number(progress.percent || 0),
           bytesPerSecond: Number(progress.bytesPerSecond || 0),
@@ -115,38 +126,52 @@ class UpdateManager extends EventEmitter {
     autoUpdater.on("update-downloaded", (info) => {
       this.state = {
         ...this.state,
-        status: "downloaded",
+        status: "installing",
+        gate: "locked",
         availableVersion: info.version,
         releaseName: info.releaseName || this.state.releaseName,
         releaseNotes: info.releaseNotes || this.state.releaseNotes,
         downloaded: true,
-        progress: { percent: 100 }
+        progress: { percent: 100 },
+        error: null
       };
       this.emitState();
+      if (!this.installScheduled) {
+        this.installScheduled = true;
+        setTimeout(() => this.install(true).catch(() => {}), 900);
+      }
     });
 
     autoUpdater.on("error", (error) => {
-      this.state = { ...this.state, status: "error", error: error?.message || String(error) };
+      this.state = {
+        ...this.state,
+        status: "error",
+        gate: this.app.isPackaged ? "error" : "open",
+        mandatory: this.app.isPackaged,
+        error: error?.message || String(error)
+      };
       this.emitState();
     });
   }
 
   async check() {
     if (!this.app.isPackaged) {
-      this.state = { ...this.state, status: "development", error: "Les mises à jour automatiques sont testables uniquement sur la version installée (.exe)." };
+      this.state = { ...this.state, status: "development", gate: "open", mandatory: false, error: "Les mises à jour automatiques sont testables uniquement sur la version installée (.exe)." };
       this.emitState();
       return this.snapshot();
     }
     if (!this.hasConfiguredFeed()) {
-      this.state = { ...this.state, status: "unconfigured", error: "Aucun canal de mise à jour configuré." };
+      this.state = { ...this.state, status: "unconfigured", gate: "error", mandatory: true, error: "Aucun canal de mise à jour configuré." };
       this.emitState();
       return this.snapshot();
     }
     try {
       this.configureFeed();
+      this.state = { ...this.state, status: "checking", gate: "checking", mandatory: true, error: null };
+      this.emitState();
       await autoUpdater.checkForUpdates();
     } catch (error) {
-      this.state = { ...this.state, status: "error", error: error?.message || String(error) };
+      this.state = { ...this.state, status: "error", gate: "error", mandatory: true, error: error?.message || String(error) };
       this.emitState();
     }
     return this.snapshot();
@@ -156,16 +181,21 @@ class UpdateManager extends EventEmitter {
     if (!this.app.isPackaged) return this.check();
     try {
       this.configureFeed();
+      this.state = { ...this.state, status: "downloading", gate: "locked", mandatory: true, error: null };
+      this.emitState();
       await autoUpdater.downloadUpdate();
     } catch (error) {
-      this.state = { ...this.state, status: "error", error: error?.message || String(error) };
+      this.state = { ...this.state, status: "error", gate: "error", mandatory: true, error: error?.message || String(error) };
       this.emitState();
     }
     return this.snapshot();
   }
 
-  async install() {
+  async install(silent = true) {
     if (!this.state.downloaded) return { ok: false, error: "Aucune mise à jour téléchargée." };
+    this.state = { ...this.state, status: "installing", gate: "locked", mandatory: true, error: null };
+    this.emitState();
+
     await this.serviceManager.refreshStates();
     const snapshot = this.serviceManager.snapshot();
     const restoreServices = Object.values(snapshot.services)
@@ -181,19 +211,19 @@ class UpdateManager extends EventEmitter {
         releaseNotes: this.state.releaseNotes || null
       }
     });
+
     for (const name of [...restoreServices].reverse()) {
       try { await this.serviceManager.stopService(name); } catch {}
     }
-    setTimeout(() => autoUpdater.quitAndInstall(false, true), 250);
+
+    setTimeout(() => autoUpdater.quitAndInstall(Boolean(silent), true), 300);
     return { ok: true, restoring: restoreServices };
   }
 
   startSchedule() {
     this.stopSchedule();
-    const cfg = this.config();
-    if (!cfg.autoCheck || !this.app.isPackaged || !this.hasConfiguredFeed()) return;
-    setTimeout(() => this.check(), 6000);
-    const hours = Math.max(1, Number(cfg.checkIntervalHours || 6));
+    if (!this.app.isPackaged || !this.hasConfiguredFeed()) return;
+    const hours = Math.max(1, Number(this.config().checkIntervalHours || 6));
     this.timer = setInterval(() => this.check(), hours * 60 * 60 * 1000);
   }
 
