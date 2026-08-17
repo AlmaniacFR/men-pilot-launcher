@@ -1,0 +1,49 @@
+const { contextBridge, ipcRenderer } = require("electron");
+
+function on(channel, handler) {
+  const listener = (_event, value) => handler(value);
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
+}
+
+contextBridge.exposeInMainWorld("men", {
+  snapshot: () => ipcRenderer.invoke("men:snapshot"),
+  startService: (name) => ipcRenderer.invoke("men:start-service", name),
+  stopService: (name) => ipcRenderer.invoke("men:stop-service", name),
+  restartService: (name) => ipcRenderer.invoke("men:restart-service", name),
+  startAll: () => ipcRenderer.invoke("men:start-all"),
+  stopAll: () => ipcRenderer.invoke("men:stop-all"),
+  setProfile: (profile) => ipcRenderer.invoke("men:set-profile", profile),
+
+  getLogs: (service) => ipcRenderer.invoke("men:get-logs", service),
+  getConfig: () => ipcRenderer.invoke("men:get-config"),
+  saveConfig: (config) => ipcRenderer.invoke("men:save-config", config),
+  diagnostics: () => ipcRenderer.invoke("men:diagnostics"),
+  projectOverview: () => ipcRenderer.invoke("men:project-overview"),
+  taskSnapshot: () => ipcRenderer.invoke("men:task-snapshot"),
+  runTask: (kind) => ipcRenderer.invoke("men:run-task", kind),
+  resetDatabase: (token) => ipcRenderer.invoke("men:reset-database", token),
+
+  sessionStart: () => ipcRenderer.invoke("men:session-start"),
+  sessionStop: () => ipcRenderer.invoke("men:session-stop"),
+  sessionSnapshot: () => ipcRenderer.invoke("men:session-snapshot"),
+
+  updateSnapshot: () => ipcRenderer.invoke("men:update-snapshot"),
+  updateCheck: () => ipcRenderer.invoke("men:update-check"),
+  updateDownload: () => ipcRenderer.invoke("men:update-download"),
+  updateInstall: () => ipcRenderer.invoke("men:update-install"),
+
+  clearHistory: () => ipcRenderer.invoke("men:clear-history"),
+  openApplication: () => ipcRenderer.invoke("men:open-application"),
+  openBackend: () => ipcRenderer.invoke("men:open-backend"),
+  openSwagger: () => ipcRenderer.invoke("men:open-swagger"),
+  openPgadmin: () => ipcRenderer.invoke("men:open-pgadmin"),
+  openWorkspace: () => ipcRenderer.invoke("men:open-workspace"),
+  openLogDirectory: () => ipcRenderer.invoke("men:open-log-directory"),
+
+  onState: (handler) => on("men:state", handler),
+  onLog: (handler) => on("men:log", handler),
+  onTask: (handler) => on("men:task", handler),
+  onUpdate: (handler) => on("men:update", handler),
+  onSession: (handler) => on("men:session", handler)
+});

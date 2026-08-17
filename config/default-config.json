@@ -1,0 +1,80 @@
+{
+  "workspace": "D:\\Workspaces\\men-pilot",
+  "pollIntervalMs": 2000,
+  "activeProfile": "dev",
+  "profiles": {
+    "dev": {
+      "label": "DEV",
+      "env": {}
+    },
+    "test": {
+      "label": "TEST",
+      "env": {}
+    },
+    "demo": {
+      "label": "DEMO",
+      "env": {}
+    }
+  },
+  "services": {
+    "postgres": {
+      "label": "PostgreSQL",
+      "kind": "oneshot",
+      "cwd": ".",
+      "startCommand": "docker compose up -d postgres",
+      "stopCommand": "docker compose stop postgres",
+      "port": 5432,
+      "startupTimeoutMs": 45000,
+      "healthUrl": ""
+    },
+    "backend": {
+      "label": "Spring Boot API",
+      "kind": "process",
+      "cwd": "backend",
+      "startCommand": ".\\mvnw.cmd spring-boot:run",
+      "port": 8080,
+      "startupTimeoutMs": 120000,
+      "healthUrl": "http://localhost:8080/actuator/health"
+    },
+    "frontend": {
+      "label": "Angular Frontend",
+      "kind": "process",
+      "cwd": "frontend",
+      "startCommand": "npm start",
+      "port": 4200,
+      "startupTimeoutMs": 120000,
+      "healthUrl": "http://localhost:4200"
+    }
+  },
+  "urls": {
+    "application": "http://localhost:4200",
+    "backend": "http://localhost:8080",
+    "swagger": "http://localhost:8080/swagger-ui/index.html",
+    "pgadmin": ""
+  },
+  "tasks": {
+    "backendTests": ".\\mvnw.cmd test",
+    "frontendTests": "npm test -- --watch=false",
+    "backendClean": ".\\mvnw.cmd clean",
+    "flywayMigrate": ".\\mvnw.cmd flyway:migrate",
+    "databaseReset": "docker compose down -v && docker compose up -d postgres"
+  },
+  "safety": {
+    "allowDatabaseReset": false
+  },
+  "notifications": {
+    "enabled": true,
+    "notifyOnCrash": true,
+    "notifyOnBuildError": true
+  },
+  "windows": {
+    "launchAtLogin": false
+  },
+  "updates": {
+    "autoCheck": true,
+    "autoDownload": true,
+    "checkIntervalHours": 6,
+    "genericUrl": "",
+    "channel": "latest"
+  }
+}

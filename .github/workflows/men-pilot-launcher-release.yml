@@ -1,0 +1,40 @@
+name: Release MEN Pilot Launcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version a publier (ex: 2.0.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm install
+
+      - name: Set launcher version
+        shell: pwsh
+        run: npm version "${{ inputs.version }}" --no-git-tag-version
+
+      - name: Build and publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.MEN_LAUNCHER_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          MEN_LAUNCHER_GITHUB_REPOSITORY: ${{ vars.MEN_LAUNCHER_RELEASE_REPOSITORY || github.repository }}
+        run: npm run publish
