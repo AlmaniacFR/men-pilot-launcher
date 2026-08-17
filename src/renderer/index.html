@@ -1,157 +1,44 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MEN Pilot Launcher</title>
-  <link rel="stylesheet" href="./styles.css" />
+<meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>MEN Pilot Launcher</title><link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div id="mandatoryUpdateGate" class="update-gate">
-    <div class="update-gate-card">
-      <img src="../../assets/men-pilot.png" class="update-gate-logo" alt="" />
-      <div class="update-gate-eyebrow">MEN PILOT LAUNCHER</div>
-      <h1 id="gateTitle">Vérification de la version</h1>
-      <div id="gateMessage" class="update-gate-message">Une vérification de mise à jour est obligatoire avant l'ouverture du Control Center.</div>
-      <div class="gate-version-row"><span id="gateCurrentVersion">Version installée —</span><span id="gateTargetVersion">Version cible —</span></div>
-      <div class="gate-progress-track"><div id="gateProgress" class="gate-progress-bar"></div></div>
-      <div id="gateProgressText" class="update-gate-progress-text">Connexion au canal de mise à jour...</div>
-      <div id="gateError" class="update-gate-error"></div>
-      <button id="gateRetry" class="btn primary update-gate-retry">Réessayer</button>
-      <div class="update-gate-foot">Les mises à jour sont téléchargées et installées automatiquement. Aucun assistant d'installation n'est affiché lors des mises à jour.</div>
-    </div>
-  </div>
+<div id="mandatoryUpdateGate" class="update-gate"><div class="update-gate-card"><img src="../../assets/men-pilot.png" class="update-gate-logo" alt=""><div class="update-gate-eyebrow">MEN PILOT LAUNCHER</div><h1 id="gateTitle">Vérification de la version</h1><div id="gateMessage" class="update-gate-message">Une vérification est obligatoire avant l'ouverture du Control Center.</div><div class="gate-version-row"><span id="gateCurrentVersion">Version installée —</span><span id="gateTargetVersion">Version cible —</span></div><div class="gate-progress-track"><div id="gateProgress" class="gate-progress-bar"></div></div><div id="gateProgressText" class="update-gate-progress-text">Connexion au canal de mise à jour...</div><div id="gateError" class="update-gate-error"></div><button id="gateRetry" class="btn primary update-gate-retry">Réessayer</button></div></div>
 
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="../../assets/men-pilot.png" class="brand-icon" alt="" />
-        <div><div class="brand-title">MEN PILOT</div><div class="brand-subtitle">CONTROL CENTER</div></div>
-      </div>
-      <nav>
-        <button class="nav-item active" data-section="dashboard">Dashboard</button>
-        <button class="nav-item" data-section="roadmap">Roadmap MEN Pilot</button>
-        <button class="nav-item" data-section="logs">Logs</button>
-        <button class="nav-item" data-section="quality">Qualité & tests</button>
-        <button class="nav-item" data-section="database">Base & Docker</button>
-        <button class="nav-item" data-section="history">Historique</button>
-        <button class="nav-item" data-section="diagnostics">Diagnostic & réparation</button>
-        <button class="nav-item" data-section="updates">Mises à jour</button>
-        <button class="nav-item" data-section="settings">Configuration</button>
-      </nav>
-      <div class="sidebar-footer">
-        <div id="globalStatus" class="global-status"><span class="dot"></span><span>État inconnu</span></div>
-        <div id="workspaceShort" class="workspace-short"></div>
-        <div id="launcherVersion" class="workspace-short"></div>
-      </div>
-    </aside>
+<div class="shell">
+<aside class="sidebar"><div class="brand"><img src="../../assets/men-pilot.png" class="brand-icon" alt=""><div><div class="brand-title">MEN PILOT</div><div class="brand-subtitle">CONTROL CENTER 3.0</div></div></div>
+<nav>
+<button class="nav-item active" data-section="dashboard">Vue d'ensemble</button><button class="nav-item" data-section="health">Santé & réparation</button><button class="nav-item" data-section="assistant">Assistant</button><button class="nav-item" data-section="roadmap">Roadmap</button><button class="nav-item" data-section="quality">Qualité</button><button class="nav-item" data-section="database">Base & Flyway</button><button class="nav-item" data-section="git">Git</button><button class="nav-item" data-section="storage">Stockage</button><button class="nav-item" data-section="journal">Journal</button><button class="nav-item" data-section="logs">Logs</button><button class="nav-item" data-section="updates">Mises à jour</button><button class="nav-item" data-section="settings">Configuration</button>
+</nav><div class="sidebar-footer"><div id="globalStatus" class="global-status"><span class="dot"></span><span>État inconnu</span></div><div id="workspaceShort" class="workspace-short"></div><div id="launcherVersion" class="workspace-short"></div></div></aside>
 
-    <main>
-      <header class="topbar">
-        <div><h1 id="pageTitle">Dashboard</h1><div id="lastRefresh" class="muted">Initialisation...</div></div>
-        <div class="top-actions">
-          <select id="profileSelect" class="select compact-select"></select>
-          <button id="sessionToggle" class="btn secondary">Démarrer session</button>
-          <button id="openWorkspace" class="btn secondary">Workspace</button>
-          <button id="openApp" class="btn secondary">Ouvrir l'app</button>
-          <button id="stopAll" class="btn danger">Tout arrêter</button>
-          <button id="startAll" class="btn primary">Tout démarrer</button>
-        </div>
-      </header>
+<main><header class="topbar"><div><h1 id="pageTitle">Vue d'ensemble</h1><div id="lastRefresh" class="muted">Initialisation...</div></div><div class="top-actions"><select id="profileSelect" class="select compact-select"></select><button id="sessionToggle" class="btn secondary">Démarrer session</button><button id="openWorkspace" class="btn secondary">Workspace</button><button id="openApp" class="btn secondary">Ouvrir MEN Pilot</button><button id="stopAll" class="btn danger">Tout arrêter</button><button id="startAll" class="btn primary">Tout démarrer</button></div></header>
 
-      <section id="section-dashboard" class="section active">
-        <div class="metrics-grid">
-          <article class="metric"><div class="metric-label">Services disponibles</div><div id="metricServices" class="metric-value">0 / 4</div><div class="metric-foot">Docker + PostgreSQL + backend + frontend</div></article>
-          <article class="metric"><div class="metric-label">Branche Git</div><div id="metricBranch" class="metric-value small-value">—</div><div id="metricCommit" class="metric-foot">—</div></article>
-          <article class="metric"><div class="metric-label">Tests</div><div id="metricTests" class="metric-value small-value">—</div><div class="metric-foot">Dernier backend / frontend</div></article>
-          <article class="metric"><div class="metric-label">Roadmap</div><div id="metricRoadmap" class="metric-value small-value">—</div><div id="metricRoadmapCurrent" class="metric-foot">Chargement...</div></article>
-        </div>
-        <div id="serviceGrid" class="service-grid"></div>
-        <div class="two-columns">
-          <article class="panel"><div class="panel-header"><div><h2>Projet</h2><div class="muted">Git, migrations, Docker et base</div></div><button id="refreshOverview" class="btn tertiary">Actualiser</button></div><div id="projectOverview" class="info-grid"></div></article>
-          <article class="panel"><div class="panel-header"><div><h2>Session développeur</h2><div class="muted">Historisation d'une session de travail</div></div></div><div id="sessionPanel" class="session-panel"></div></article>
-        </div>
-        <div class="two-columns gap-top">
-          <article class="panel"><div class="panel-header"><div><h2>Activité récente</h2><div class="muted">Derniers événements</div></div></div><div id="recentHistory" class="timeline"></div></article>
-          <article class="panel"><div class="panel-header"><div><h2>Console live</h2><div class="muted">Dernières lignes tous services</div></div><button id="openLogsFolder" class="btn tertiary">Dossier logs</button></div><pre id="liveConsole" class="console compact"></pre></article>
-        </div>
-      </section>
+<section id="section-dashboard" class="section active"><div class="metrics-grid"><article class="metric"><div class="metric-label">Santé globale</div><div id="metricHealth" class="metric-value small-value">—</div><div id="metricHealthDetail" class="metric-foot">Analyse...</div></article><article class="metric"><div class="metric-label">Git</div><div id="metricGit" class="metric-value small-value">—</div><div id="metricGitDetail" class="metric-foot">—</div></article><article class="metric"><div class="metric-label">Qualité</div><div id="metricQuality" class="metric-value small-value">—</div><div class="metric-foot">Derniers tests</div></article><article class="metric"><div class="metric-label">Roadmap</div><div id="metricRoadmap" class="metric-value small-value">—</div><div id="metricRoadmapCurrent" class="metric-foot">—</div></article></div><div id="serviceGrid" class="service-grid"></div><div class="two-columns"><article class="panel"><div class="panel-header"><div><h2>Assistant de contrôle</h2><div class="muted">Priorités détectées automatiquement</div></div><button class="btn tertiary" id="refreshAssistant">Analyser</button></div><div id="dashboardAssistant"></div></article><article class="panel"><div class="panel-header"><div><h2>Session développeur</h2><div class="muted">Travail en cours et contexte produit</div></div></div><div id="sessionPanel"></div></article></div><div class="two-columns gap-top"><article class="panel"><div class="panel-header"><div><h2>Activité récente</h2></div></div><div id="recentHistory" class="timeline"></div></article><article class="panel"><div class="panel-header"><div><h2>Console live</h2></div><button id="openLogsFolder" class="btn tertiary">Dossier logs</button></div><pre id="liveConsole" class="console compact"></pre></article></div></section>
 
-      <section id="section-roadmap" class="section roadmap-section">
-        <div class="roadmap-toolbar panel">
-          <div><h2>Roadmap MEN Pilot</h2><div class="muted">Vue par tranches et lots, alimentée automatiquement par docs/ROADMAP.md</div></div>
-          <div class="top-actions"><button id="openRoadmap" class="btn secondary">Ouvrir ROADMAP.md</button><button id="refreshRoadmap" class="btn primary">Actualiser</button></div>
-        </div>
-        <div id="roadmapSummary" class="metrics-grid roadmap-metrics"></div>
-        <div id="roadmapCurrent" class="roadmap-current"></div>
-        <div class="roadmap-scroll-shell">
-          <div id="roadmapList" class="roadmap-board"></div>
-        </div>
-      </section>
+<section id="section-health" class="section"><article class="panel"><div class="panel-header"><div><h2>Centre de santé MEN Pilot</h2><div class="muted">Contrôle fonctionnel de l'environnement, des services et de la base</div></div><button id="refreshHealth" class="btn primary">Diagnostiquer MEN Pilot</button></div><div id="healthHero"></div><div id="healthGrid" class="health-grid gap-top"></div></article><article class="panel gap-top"><div class="panel-header"><div><h2>Diagnostic technique</h2><div class="muted">Java, Node, npm, Docker, ports et chemins</div></div><div class="top-actions"><button id="repairEnvironment" class="btn secondary">Réparer l'environnement</button><button id="runDiagnostics" class="btn secondary">Diagnostic détaillé</button></div></div><div id="diagnosticsResult" class="diagnostics-grid"></div></article></section>
 
-      <section id="section-logs" class="section">
-        <article class="panel full-height"><div class="panel-header"><div><h2>Logs consolidés</h2><div class="muted">Docker, PostgreSQL, backend, frontend et tâches</div></div><div class="segmented" id="logFilter"><button data-service="all" class="active">Tous</button><button data-service="docker">Docker</button><button data-service="postgres">PostgreSQL</button><button data-service="backend">Backend</button><button data-service="frontend">Frontend</button><button data-service="tasks">Tâches</button></div></div><pre id="fullConsole" class="console"></pre></article>
-      </section>
+<section id="section-assistant" class="section"><article class="panel"><div class="panel-header"><div><h2>Assistant MEN Pilot</h2><div class="muted">Analyse locale des signaux techniques et du travail actuel</div></div><button id="refreshAssistantFull" class="btn primary">Analyser maintenant</button></div><div id="assistantFindings" class="assistant-list"></div></article></section>
 
-      <section id="section-quality" class="section">
-        <div class="two-columns">
-          <article class="panel"><div class="panel-header"><div><h2>Tests backend</h2><div class="muted">Maven / Surefire</div></div><button class="btn primary task-button" data-task="backendTests">Lancer</button></div><div id="backendTestResult" class="result-card"></div></article>
-          <article class="panel"><div class="panel-header"><div><h2>Tests frontend</h2><div class="muted">Angular / Vitest / Karma selon le projet</div></div><button class="btn primary task-button" data-task="frontendTests">Lancer</button></div><div id="frontendTestResult" class="result-card"></div></article>
-        </div>
-        <article class="panel gap-top"><div class="panel-header"><div><h2>Maintenance développeur</h2><div class="muted">Commandes visibles et historisées</div></div></div><div class="action-grid"><button class="btn secondary task-button" data-task="backendClean">Clean backend</button><button class="btn secondary task-button" data-task="flywayMigrate">Flyway migrate</button><button id="openSwagger" class="btn secondary">Swagger</button><button id="openBackend" class="btn secondary">Backend</button></div><pre id="taskConsole" class="console compact gap-top"></pre></article>
-      </section>
+<section id="section-roadmap" class="section roadmap-section"><div class="roadmap-toolbar panel"><div><h2>Roadmap MEN Pilot</h2><div class="muted">Résumé métier en français. Clique sur une tâche pour afficher les détails techniques.</div></div><div class="top-actions"><button id="openRoadmap" class="btn secondary">Ouvrir le document source</button><button id="refreshRoadmap" class="btn primary">Actualiser</button></div></div><div id="roadmapSummary" class="metrics-grid roadmap-metrics"></div><div id="roadmapCurrent" class="roadmap-current"></div><div class="roadmap-scroll-shell"><div id="roadmapList" class="roadmap-board"></div></div></section>
 
-      <section id="section-database" class="section">
-        <div class="two-columns">
-          <article class="panel"><div class="panel-header"><div><h2>PostgreSQL / Docker</h2><div class="muted">État du conteneur et consommation</div></div><button id="refreshDatabase" class="btn tertiary">Actualiser</button></div><div id="dockerPanel" class="info-grid"></div></article>
-          <article class="panel"><div class="panel-header"><div><h2>Base MEN Pilot</h2><div class="muted">Taille et Flyway</div></div></div><div id="databasePanel" class="info-grid"></div></article>
-        </div>
-        <article class="panel gap-top danger-panel"><div class="panel-header"><div><h2>Zone protégée</h2><div class="muted">Le reset supprime les volumes Docker du compose local.</div></div></div><div class="action-grid"><button id="resetDatabase" class="btn danger">RESET base locale</button><button id="openPgadmin" class="btn secondary">pgAdmin</button></div></article>
-      </section>
+<section id="section-quality" class="section"><div class="two-columns"><article class="panel"><div class="panel-header"><div><h2>Backend</h2><div class="muted">Tests et build Maven</div></div><div class="top-actions"><button class="btn secondary task-button" data-task="backendBuild">Build</button><button class="btn primary task-button" data-task="backendTests">Tests</button></div></div><div id="backendTestResult" class="result-card"></div></article><article class="panel"><div class="panel-header"><div><h2>Frontend</h2><div class="muted">Tests et build Angular</div></div><div class="top-actions"><button class="btn secondary task-button" data-task="frontendBuild">Build</button><button class="btn primary task-button" data-task="frontendTests">Tests</button></div></div><div id="frontendTestResult" class="result-card"></div></article></div><article class="panel gap-top"><div class="panel-header"><div><h2>Historique qualité</h2><div class="muted">Évolution des tests sur les dernières exécutions</div></div></div><div id="qualityHistory" class="quality-history"></div></article></section>
 
-      <section id="section-history" class="section">
-        <article class="panel"><div class="panel-header"><div><h2>Historique des opérations</h2><div class="muted">Démarrages, arrêts, tests, sessions et erreurs</div></div><button id="clearHistory" class="btn danger-outline">Vider l'historique</button></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Service</th><th>Action</th><th>Résultat</th><th>Durée</th><th>Détail</th></tr></thead><tbody id="historyBody"></tbody></table></div></article>
-      </section>
+<section id="section-database" class="section"><div class="two-columns"><article class="panel"><div class="panel-header"><div><h2>Base MEN Pilot</h2></div><button id="refreshDatabase" class="btn tertiary">Actualiser</button></div><div id="databasePanel" class="info-grid"></div></article><article class="panel"><div class="panel-header"><div><h2>Snapshots PostgreSQL</h2><div class="muted">Sauvegarde avant migrations ou manipulations sensibles</div></div><div class="top-actions"><button id="openBackupDir" class="btn secondary">Dossier</button><button id="createBackup" class="btn primary">Créer snapshot</button></div></div><div id="backupList" class="backup-list"></div></article></div><article class="panel gap-top"><div class="panel-header"><div><h2>Historique Flyway</h2><div class="muted">Dernières migrations appliquées</div></div><button class="btn secondary task-button" data-task="flywayMigrate">Migrate</button></div><div id="migrationList" class="migration-list"></div></article></section>
 
-      <section id="section-diagnostics" class="section">
-        <article class="panel">
-          <div class="panel-header"><div><h2>Diagnostic & réparation</h2><div class="muted">Le launcher recherche aussi Java/Node/npm hors de son PATH initial et peut mémoriser les chemins détectés.</div></div><div class="top-actions"><button id="repairEnvironment" class="btn secondary">Réparer l'environnement</button><button id="runDiagnostics" class="btn primary">Lancer le diagnostic</button></div></div>
-          <div id="repairStatus" class="notice">La réparation agit sur l'environnement interne du launcher : elle n'écrase pas le PATH système Windows.</div>
-          <div id="diagnosticsResult" class="diagnostics-grid empty-state">Aucun diagnostic lancé.</div>
-        </article>
-      </section>
+<section id="section-git" class="section"><article class="panel"><div class="panel-header"><div><h2>Git Cockpit</h2><div class="muted">État du dépôt MEN Pilot sans remplacer ton client Git</div></div><div class="top-actions"><button id="openGitHub" class="btn secondary">GitHub</button><button id="gitFetch" class="btn secondary">Fetch</button><button id="gitPull" class="btn primary">Pull FF-only</button></div></div><div id="gitSummary" class="info-grid"></div><div id="gitChanges" class="git-changes gap-top"></div></article></section>
 
-      <section id="section-updates" class="section">
-        <article class="panel update-panel">
-          <div class="panel-header"><div><h2>Mises à jour du launcher</h2><div class="muted">Les mises à jour sont obligatoires et entièrement prises en charge par le launcher.</div></div><button id="checkUpdate" class="btn primary">Vérifier maintenant</button></div>
-          <div id="updateStatus" class="update-status"></div>
-          <div class="progress-track"><div id="updateProgress" class="progress-bar"></div></div>
-          <div id="availableReleaseNotes" class="release-notes gap-top"></div>
-          <div class="notice gap-top">Lorsqu'une nouvelle version existe, le Control Center est verrouillé, la version est téléchargée automatiquement, les services gérés sont arrêtés proprement, puis l'installation s'effectue silencieusement et le launcher redémarre.</div>
-          <div class="action-grid gap-top"><button id="downloadUpdate" class="btn secondary">Relancer le téléchargement</button><button id="installUpdate" class="btn primary">Installer maintenant</button></div>
-        </article>
-        <article class="panel gap-top"><div class="panel-header"><div><h2>Historique des versions</h2><div class="muted">Lots fonctionnels apportés par chaque version du launcher</div></div></div><div id="releaseHistory" class="release-history"></div></article>
-      </section>
+<section id="section-storage" class="section"><article class="panel"><div class="panel-header"><div><h2>Stockage</h2><div class="muted">Espace disque consommé par l'environnement de développement</div></div><button id="refreshStorage" class="btn primary">Analyser</button></div><div id="storageDrive" class="storage-drive"></div><div id="storageItems" class="storage-items gap-top"></div><div id="dockerStorage" class="gap-top"></div></article></section>
 
-      <section id="section-settings" class="section">
-        <article class="panel settings-panel">
-          <div class="panel-header"><div><h2>Configuration</h2><div class="muted">Les nouvelles versions migrent automatiquement ce fichier sans effacer tes réglages.</div></div></div>
-          <form id="settingsForm" class="settings-form">
-            <label><span>Workspace MEN Pilot</span><input id="cfgWorkspace" type="text" /></label>
-            <div class="form-grid"><label><span>Port PostgreSQL</span><input id="cfgPostgresPort" type="number" /></label><label><span>Port backend</span><input id="cfgBackendPort" type="number" /></label><label><span>Port frontend</span><input id="cfgFrontendPort" type="number" /></label></div>
-            <label><span>URL application</span><input id="cfgApplicationUrl" type="text" /></label><label><span>URL backend</span><input id="cfgBackendUrl" type="text" /></label><label><span>URL Swagger</span><input id="cfgSwaggerUrl" type="text" /></label><label><span>URL pgAdmin (optionnel)</span><input id="cfgPgadminUrl" type="text" /></label><label><span>URL serveur de mises à jour générique</span><input id="cfgUpdateUrl" type="text" /></label>
-            <div class="notice">Politique de mise à jour : vérification au démarrage, téléchargement automatique et installation obligatoire. Cette politique ne peut pas être désactivée dans le launcher.</div>
-            <div class="toggle-row"><label class="check"><input id="cfgNotifications" type="checkbox" /> Notifications Windows</label><label class="check"><input id="cfgLaunchAtLogin" type="checkbox" /> Lancer avec Windows</label></div>
-            <div class="toggle-row"><label class="check"><input id="cfgAutoStartDocker" type="checkbox" /> Démarrer Docker automatiquement avec MEN Pilot</label><label class="check"><input id="cfgStopDocker" type="checkbox" /> Arrêter Docker avec « Tout arrêter »</label></div>
-            <div class="toggle-row"><label class="check danger-check"><input id="cfgAllowReset" type="checkbox" /> Autoriser le reset destructif de la DB locale</label></div>
-            <div class="settings-actions"><button type="submit" class="btn primary">Enregistrer</button><span id="settingsStatus" class="muted"></span></div>
-          </form>
-        </article>
-      </section>
-    </main>
-  </div>
-  <div id="toastHost" class="toast-host"></div>
-  <script src="./app.js"></script>
-</body>
-</html>
+<section id="section-journal" class="section"><article class="panel"><div class="panel-header"><div><h2>Journal de développement</h2><div class="muted">Sessions, temps de travail, commits et erreurs observées</div></div><button id="refreshJournal" class="btn tertiary">Actualiser</button></div><div id="journalSummary" class="metrics-grid"></div><div id="journalSessions" class="journal-list"></div></article></section>
+
+<section id="section-logs" class="section"><article class="panel full-height"><div class="panel-header"><div><h2>Logs consolidés</h2></div><div class="segmented" id="logFilter"><button data-service="all" class="active">Tous</button><button data-service="docker">Docker</button><button data-service="postgres">PostgreSQL</button><button data-service="backend">Backend</button><button data-service="frontend">Frontend</button><button data-service="tasks">Tâches</button><button data-service="database">DB</button></div></div><pre id="fullConsole" class="console"></pre></article></section>
+
+<section id="section-updates" class="section"><article class="panel update-panel"><div class="panel-header"><div><h2>Mises à jour</h2><div class="muted">Obligatoires, téléchargées et installées automatiquement</div></div><button id="checkUpdate" class="btn primary">Vérifier</button></div><div id="updateStatus" class="update-status"></div><div class="progress-track"><div id="updateProgress" class="progress-bar"></div></div><div id="releaseHistory" class="release-history gap-top"></div></article></section>
+
+<section id="section-settings" class="section"><article class="panel settings-panel"><div class="panel-header"><div><h2>Configuration</h2></div></div><form id="settingsForm" class="settings-form"><label><span>Workspace MEN Pilot</span><input id="cfgWorkspace" type="text"></label><div class="form-grid"><label><span>Port PostgreSQL</span><input id="cfgPostgresPort" type="number"></label><label><span>Port backend</span><input id="cfgBackendPort" type="number"></label><label><span>Port frontend</span><input id="cfgFrontendPort" type="number"></label></div><label><span>URL application</span><input id="cfgApplicationUrl" type="text"></label><label><span>URL pgAdmin</span><input id="cfgPgadminUrl" type="text"></label><div class="toggle-row"><label class="check"><input id="cfgNotifications" type="checkbox"> Notifications Windows</label><label class="check"><input id="cfgLaunchAtLogin" type="checkbox"> Lancer avec Windows</label><label class="check"><input id="cfgAutoStartDocker" type="checkbox"> Démarrer Docker automatiquement</label><label class="check"><input id="cfgStopDocker" type="checkbox"> Arrêter Docker avec MEN Pilot</label></div><div class="settings-actions"><button type="submit" class="btn primary">Enregistrer</button><span id="settingsStatus" class="muted"></span></div></form></article></section>
+</main></div>
+
+<div id="roadmapModal" class="modal-backdrop hidden"><div class="modal-card"><div class="modal-header"><div><div id="modalRoadmapId" class="modal-eyebrow"></div><h2 id="modalRoadmapTitle"></h2></div><button id="closeRoadmapModal" class="modal-close">×</button></div><div id="modalRoadmapSummary" class="modal-summary"></div><div class="modal-section"><h3>Détails techniques</h3><div id="modalRoadmapMeta" class="info-grid"></div></div><div class="modal-section"><h3>Extrait du document source</h3><pre id="modalRoadmapSource" class="source-box"></pre></div></div></div>
+<div id="toastHost" class="toast-host"></div><script src="./app.js"></script>
+</body></html>
